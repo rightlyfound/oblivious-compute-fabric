@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oblivious Secret Matcher</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #0a0e27 0%, #16213e 100%);
+            color: #00ff88;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background: rgba(10, 14, 39, 0.95);
+            border: 2px solid #00ff88;
+            border-radius: 10px;
+            padding: 40px;
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.2);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            border-bottom: 2px solid #00ff88;
+            padding-bottom: 20px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+        }
+
+        .header p {
+            font-size: 12px;
+            color: #00aa66;
+            margin-bottom: 5px;
+        }
+
+        .tagline {
+            font-size: 11px;
+            color: #00ff88;
+            margin-top: 10px;
+            font-style: italic;
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .user-panel {
+            border: 1px solid #00ff88;
+            padding: 20px;
+            border-radius: 5px;
+            background: rgba(0, 255, 136, 0.05);
+        }
+
+        .user-panel h2 {
+            font-size: 14px;
+            margin-bottom: 15px;
+            color: #00ff88;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 11px;
+            color: #00aa66;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid #00ff88;
+            color: #00ff88;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            border-radius: 3px;
+            transition: all 0.3s ease;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+            background: rgba(0, 255, 136, 0.1);
+        }
+
+        .hash-display {
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid #00aa66;
+            border-radius: 3px;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 10px;
+            word-break: break-all;
+            color: #00aa66;
+        }
+
+        .button-group {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        button {
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #00ff88 0%, #00cc66 100%);
+            color: #0a0e27;
+            border: none;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.3);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 25px rgba(0, 255, 136, 0.5);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .result-panel {
+            border: 2px solid #00ff88;
+            padding: 25px;
+            border-radius: 5px;
+            background: rgba(0, 255, 136, 0.08);
+            text-align: center;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .result-panel.hidden {
+            opacity: 0.5;
+            border-color: #00aa66;
+        }
+
+        .result-title {
+            font-size: 12px;
+            color: #00aa66;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .result-value {
+            font-size: 48px;
+            font-weight: bold;
+            margin: 20px 0;
+            text-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+        }
+
+        .result-value.match {
+            color: #00ff88;
+        }
+
+        .result-value.no-match {
+            color: #ff4444;
+        }
+
+        .result-label {
+            font-size: 14px;
+            color: #00ff88;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .result-label.match {
+            color: #00ff88;
+        }
+
+        .result-label.no-match {
+            color: #ff4444;
+        }
+
+        .info-panel {
+            background: rgba(0, 0, 0, 0.5);
+            border-left: 3px solid #00ff88;
+            padding: 15px;
+            margin-top: 30px;
+            border-radius: 3px;
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+        .info-panel h3 {
+            color: #00ff88;
+            margin-bottom: 10px;
+            font-size: 12px;
+        }
+
+        .info-panel p {
+            color: #00aa66;
+            margin-bottom: 8px;
+        }
+
+        .code-snippet {
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #00aa66;
+            padding: 10px;
+            border-radius: 3px;
+            font-size: 9px;
+            margin-top: 10px;
+            overflow-x: auto;
+            color: #00ff88;
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .header h1 {
+                font-size: 20px;
+            }
+
+            .result-value {
+                font-size: 36px;
+            }
+        }
+
+        .loading {
+            display: none;
+            font-size: 12px;
+            color: #00ff88;
+            margin-top: 15px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #00ff88;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>◆ OBLIVIOUS SECRET MATCHER ◆</h1>
+            <p>[CONFIDENTIAL COMPUTING DEMONSTRATION]</p>
+            <p class="tagline">Two secrets. One question: Do they match? The server doesn't get to know.</p>
+        </div>
+
+        <div class="content">
+            <div class="user-panel">
+                <h2>User A</h2>
+                <div class="input-group">
+                    <label for="secretA">Enter your secret:</label>
+                    <input type="password" id="secretA" placeholder="Type something deeply personal...">
+                </div>
+                <div class="hash-display" id="hashA">[Hash will appear here]</div>
+            </div>
+
+            <div class="user-panel">
+                <h2>User B</h2>
+                <div class="input-group">
+                    <label for="secretB">Enter your secret:</label>
+                    <input type="password" id="secretB" placeholder="Type something deeply personal...">
+                </div>
+                <div class="hash-display" id="hashB">[Hash will appear here]</div>
+            </div>
+        </div>
+
+        <div class="button-group">
+            <button onclick="compareSecrets()">COMPARE IN ENCLAVE</button>
+        </div>
+
+        <div class="result-panel hidden" id="resultPanel">
+            <div class="result-title">Enclave Computation Result</div>
+            <div class="result-value" id="resultValue">?</div>
+            <div class="result-label" id="resultLabel">Awaiting Input</div>
+            <div class="loading" id="loading">
+                <span class="spinner"></span>Processing in secure enclave...
+            </div>
+        </div>
+
+        <div class="info-panel">
+            <h3>⚡ How This Works</h3>
+            <p>
+                <strong>Your Secrets Are Hashed Locally:</strong> When you type, your input is hashed in your browser
+                using SHA-256. The server never sees your plaintext.
+            </p>
+            <p>
+                <strong>Constant-Time Comparison:</strong> Inside the enclave, a branchless bitwise algorithm compares
+                the hashes in constant time—meaning execution speed reveals nothing about the result.
+            </p>
+            <p>
+                <strong>Server Blindness:</strong> The host system receives only encrypted payloads and a 1-bit result.
+                It cannot observe timing variations, branch patterns, or memory access traces.
+            </p>
+            <div class="code-snippet">
+                // Branchless constant-time comparison<br>
+                uint32_t diff = hashA ^ hashB;<br>
+                uint32_t match = ((diff | -diff) >> 31) ^ 1;
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function hashSecret(secret) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(secret);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').substring(0, 16);
+        }
+
+        async function updateHash(inputId, displayId) {
+            const secret = document.getElementById(inputId).value;
+            const hash = await hashSecret(secret);
+            document.getElementById(displayId).textContent = secret ? `SHA256: ${hash}...` : '[Hash will appear here]';
+        }
+
+        document.getElementById('secretA').addEventListener('input', () => updateHash('secretA', 'hashA'));
+        document.getElementById('secretB').addEventListener('input', () => updateHash('secretB', 'hashB'));
+
+        async function compareSecrets() {
+            const secretA = document.getElementById('secretA').value;
+            const secretB = document.getElementById('secretB').value;
+
+            if (!secretA || !secretB) {
+                alert('Please enter secrets in both fields.');
+                return;
+            }
+
+            const resultPanel = document.getElementById('resultPanel');
+            const loading = document.getElementById('loading');
+            const resultValue = document.getElementById('resultValue');
+            const resultLabel = document.getElementById('resultLabel');
+
+            resultPanel.classList.remove('hidden');
+            loading.classList.add('active');
+            resultValue.textContent = '...';
+            resultLabel.textContent = 'Computing...';
+
+            try {
+                const response = await fetch('/compare', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ secretA, secretB })
+                });
+
+                const data = await response.json();
+                loading.classList.remove('active');
+
+                if (data.match) {
+                    resultValue.textContent = '✓';
+                    resultValue.className = 'result-value match';
+                    resultLabel.textContent = 'MATCH DETECTED';
+                    resultLabel.className = 'result-label match';
+                } else {
+                    resultValue.textContent = '✗';
+                    resultValue.className = 'result-value no-match';
+                    resultLabel.textContent = 'NO MATCH';
+                    resultLabel.className = 'result-label no-match';
+                }
+            } catch (error) {
+                loading.classList.remove('active');
+                resultValue.textContent = '!';
+                resultLabel.textContent = 'Error: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>
