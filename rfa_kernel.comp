@@ -1,0 +1,35 @@
+#version 450
+#pragma optionNV(fastmath=off)
+
+layout(local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
+
+layout(std430, binding = 0) readonly buffer InputBuffer {
+    float data[];
+} input_tensor;
+
+layout(std430, binding = 1) buffer OutputBuffer {
+    float low_bin;
+    float mid_bin;
+    float high_bin;
+} rfa_bins;
+
+void main() {
+    uint g_idx = gl_GlobalInvocationID.x;
+    
+    if (g_idx >= input_tensor.data.length()) {
+        return;
+    }
+
+    float val = input_tensor.data[g_idx];
+    uint bits = floatBitsToUint(val);
+    uint exponent = (bits >> 23) & 0xFFu;
+
+    // Direct values into explicit bins to ensure hardware-independent order summation
+    if (exponent < 115u) {
+        atomicAdd(rfa_bins.low_bin, val);
+    } else if (exponent > 140u) {
+        atomicAdd(rfa_bins.high_bin, val);
+    } else {
+        atomicAdd(rfa_bins.mid_bin, val);
+    }
+}

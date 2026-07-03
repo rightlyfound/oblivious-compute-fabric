@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: ocf-agent-mesh
+  namespace: oblivious-fabric
+spec:
+  selector:
+    matchLabels:
+      name: ocf-agent
+  template:
+    metadata:
+      labels:
+        name: ocf-agent
+    spec:
+      hostNetwork: true
+      tolerations:
+      - key: "nvidia.com/gpu"
+        operator: "Exists"
+        effect: "NoSchedule"
+      containers:
+      - name: ocf-agent
+        image: ocf/agent:v1.0.0
+        ports:
+        - containerPort: 8080
+        securityContext:
+          privileged: true 
+        volumeMounts:
+        - name: sysfs
+          mountPath: /sys
+          readOnly: true
+      volumes:
+      - name: sysfs
+        hostPath:
+          path: /sys
